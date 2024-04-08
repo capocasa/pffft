@@ -1691,19 +1691,19 @@ void pffft_zconvolve_accumulate(PFFFT_Setup *s, const float *a, const float *b, 
 # endif
 #endif
 
-  float ar, ai, br, bi, abr, abi;
+  float ar0, ai0, br0, bi0, abr0, abi0;
 #ifndef ZCONVOLVE_USING_INLINE_ASM
   v4sf vscal = LD_PS1(scaling);
   int i;
 #endif
 
   assert(VALIGNED(a) && VALIGNED(b) && VALIGNED(ab));
-  ar = ((v4sf_union*)va)[0].f[0];
-  ai = ((v4sf_union*)va)[1].f[0];
-  br = ((v4sf_union*)vb)[0].f[0];
-  bi = ((v4sf_union*)vb)[1].f[0];
-  abr = ((v4sf_union*)vab)[0].f[0];
-  abi = ((v4sf_union*)vab)[1].f[0];
+  ar0 = ((v4sf_union*)va)[0].f[0];
+  ai0 = ((v4sf_union*)va)[1].f[0];
+  br0 = ((v4sf_union*)vb)[0].f[0];
+  bi0 = ((v4sf_union*)vb)[1].f[0];
+  abr0 = ((v4sf_union*)vab)[0].f[0];
+  abi0 = ((v4sf_union*)vab)[1].f[0];
  
 #ifdef ZCONVOLVE_USING_INLINE_ASM // inline asm version, unfortunately miscompiled by clang 3.2, at least on ubuntu.. so this will be restricted to gcc
   const float *a_ = a, *b_ = b; float *ab_ = ab;
@@ -1757,8 +1757,8 @@ void pffft_zconvolve_accumulate(PFFFT_Setup *s, const float *a, const float *b, 
   }
 #endif
   if (s->transform == PFFFT_REAL) {
-    ((v4sf_union*)vab)[0].f[0] = abr + ar*br*scaling;
-    ((v4sf_union*)vab)[1].f[0] = abi + ai*bi*scaling;
+    ((v4sf_union*)vab)[0].f[0] = abr0 + ar0*br0*scaling;
+    ((v4sf_union*)vab)[1].f[0] = abi0 + ai0*bi0*scaling;
   }
 }
 
