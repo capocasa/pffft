@@ -100,7 +100,8 @@
 #  if (defined(__ppc__) || defined(__ppc64__) || defined(__powerpc__) || defined(__powerpc64__)) \
    && (defined(__VEC__) || defined(__ALTIVEC__))
 #    define PFFFT_SIMD_ALTIVEC
-#  elif defined(__ARM_NEON) || defined(__aarch64__) || defined(__arm64) || defined(_M_ARM64) || defined(_M_ARM64EC)
+#  elif defined(__ARM_NEON) || defined(__aarch64__) || defined(__arm64)  \
+   || defined(_M_ARM64) || defined(_M_ARM64EC) || defined(__wasm_simd128__)
      // we test _M_ARM64EC before _M_X64 because when _M_ARM64EC is defined, the microsoft compiler also defines _M_X64
 #    define PFFFT_SIMD_NEON
 #  elif defined(__x86_64__) || defined(__SSE__) || defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 1)
