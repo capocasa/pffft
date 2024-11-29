@@ -94,11 +94,23 @@
 // define PFFFT_SIMD_DISABLE if you want to use scalar code instead of simd code
 //#define PFFFT_SIMD_DISABLE
 
+/* select which SIMD intrinsics will be used */
+#if !defined(PFFFT_SIMD_DISABLE)
+#  if (defined(__ppc__) || defined(__ppc64__) || defined(__powerpc__) || defined(__powerpc64__)) \
+   && (defined(__VEC__) || defined(__ALTIVEC__))
+#    define PFFFT_SIMD_ALTIVEC
+#  elif defined(__ARM_NEON) || defined(__aarch64__) || defined(__arm64) || defined(_M_ARM64) || defined(_M_ARM64EC)
+     // we test _M_ARM64EC before _M_X64 because when _M_ARM64EC is defined, the microsoft compiler also defines _M_X64
+#    define PFFFT_SIMD_NEON
+#  elif defined(__x86_64__) || defined(__SSE__) || defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 1)
+#    define PFFFT_SIMD_SSE
+#   endif
+#endif // PFFFT_SIMD_DISABLE
+
 /*
-   Altivec support macros 
+  Altivec support macros
 */
-#if !defined(PFFFT_SIMD_DISABLE) && (defined(__ppc__) || defined(__ppc64__) || defined(__powerpc__) || defined(__powerpc64__)) \
-    && (defined(__VEC__) || defined(__ALTIVEC__))
+#ifdef PFFFT_SIMD_ALTIVEC
 #include <altivec.h>
 typedef vector float v4sf;
 #  define SIMD_SZ 4
@@ -131,8 +143,7 @@ inline v4sf ld_ps1(const float *p) { v4sf v=vec_lde(0,p); return vec_splat(vec_p
 /*
   SSE1 support macros
 */
-#elif !defined(PFFFT_SIMD_DISABLE) && (defined(__x86_64__) || defined(__SSE__) || defined(_M_X64) || \
-    (defined(_M_IX86_FP) && _M_IX86_FP >= 1))
+#elif defined(PFFFT_SIMD_SSE)
 
 #include <xmmintrin.h>
 typedef __m128 v4sf;
@@ -152,7 +163,7 @@ typedef __m128 v4sf;
 /*
   ARM NEON support macros
 */
-#elif !defined(PFFFT_SIMD_DISABLE) && (defined(__ARM_NEON) || defined(__aarch64__) || defined(__arm64) || defined(_M_ARM64))
+#elif defined(PFFFT_SIMD_NEON)
 #  include <arm_neon.h>
 typedef float32x4_t v4sf;
 #  define SIMD_SZ 4
