@@ -57,9 +57,11 @@
   - 2011/10/02, version 1: This is the very first release of this file.
 */
 
-#define _USE_MATH_DEFINES // ask gently MSVC to define M_PI, M_SQRT2 etc.
+#ifndef _USE_MATH_DEFINES
+#  define _USE_MATH_DEFINES // ask gently MSVC to define M_PI, M_SQRT2 etc.
+#endif
+
 #include "pffft.h"
-#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
