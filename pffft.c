@@ -57,7 +57,7 @@
   - 2011/10/02, version 1: This is the very first release of this file.
 */
 
-#define _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES // ask gently MSVC to define M_PI, M_SQRT2 etc.
 #include "pffft.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -1067,6 +1067,7 @@ static NEVER_INLINE(v4sf *) rfftb1_ps(int n, const v4sf *input_readonly, v4sf *w
   return in; /* this is in fact the output .. */
 }
 
+#define IFAC_MAX_SIZE 25 /* max number of integer factors for the decomposition, +2 */
 static int decompose(int n, int *ifac, const int *ntryh) {
   int nl = n, nf = 0, i, j = 0;
   for (j=0; ntryh[j]; ++j) {
@@ -1075,6 +1076,7 @@ static int decompose(int n, int *ifac, const int *ntryh) {
       int nq = nl / ntry;
       int nr = nl - ntry * nq;
       if (nr == 0) {
+        assert(2 + nf < IFAC_MAX_SIZE);
         ifac[2+nf++] = ntry;
         nl = nq;
         if (ntry == 2 && nf != 1) {
@@ -1216,7 +1218,8 @@ v4sf *cfftf1_ps(int n, const v4sf *input_readonly, v4sf *work1, v4sf *work2, con
 struct PFFFT_Setup {
   int     N;
   int     Ncvec; // nb of complex simd vectors (N/4 if PFFFT_COMPLEX, N/8 if PFFFT_REAL)
-  int ifac[15];
+  // hold the decomposition into small integers of N
+  int ifac[IFAC_MAX_SIZE]; // N , number of factors, factors (admitted values: 2, 3, 4 ou 5)
   pffft_transform_t transform;
   v4sf *data; // allocated room for twiddle coefs
   float *e;    // points into 'data' , N/4*3 elements
@@ -1224,6 +1227,15 @@ struct PFFFT_Setup {
 };
 
 PFFFT_Setup *pffft_new_setup(int N, pffft_transform_t transform) {
+  // validate N for negative values or potential int overflow
+  if (N < 0) {
+    return 0;
+  }
+  if (N > (1<<26)) {
+    // higher values of N will make you enter in the integer overflow world...
+    assert(0);
+    return 0;
+  }
   PFFFT_Setup *s = (PFFFT_Setup*)malloc(sizeof(PFFFT_Setup));
   int k, m;
   /* unfortunately, the fft size must be a multiple of 16 for complex FFTs
@@ -1313,7 +1325,7 @@ void pffft_zreorder(PFFFT_Setup *setup, const float *in, float *out, pffft_direc
   v4sf *vout = (v4sf*)out;
   assert(in != out);
   if (setup->transform == PFFFT_REAL) {
-    int dk = N/32;
+    int k, dk = N/32;
     if (direction == PFFFT_FORWARD) {
       for (k=0; k < dk; ++k) {
         INTERLEAVE2(vin[k*8 + 0], vin[k*8 + 1], vout[2*(0*dk + k) + 0], vout[2*(0*dk + k) + 1]);
