@@ -54,34 +54,18 @@ proc pffft_zreorder*(setup: PffftSetup, input: ptr UncheckedArray[float32], outp
 ## Perform multiplication of frequency components and accumulate: dft_ab += (dft_a * dft_b) * scaling
 ## Arrays should be obtained from pffft_transform(..., PFFFT_FORWARD) without reordering
 proc pffft_zconvolve_accumulate*(setup: PffftSetup, dft_a: ptr UncheckedArray[float32], dft_b: ptr UncheckedArray[float32],
-                                dft_ab: ptr UncheckedArray[float32], scaling: cfloat) {.
+                                dft_ab: ptr UncheckedArray[float32], scaling: float32) {.
   cdecl, importc: "pffft_zconvolve_accumulate".}
 
 ## Allocate aligned memory buffer (16-byte boundary for SIMD)
-proc pffft_aligned_malloc*(nb_bytes: csize_t): pointer {.
+proc pffft_aligned_malloc*(nb_bytes: csize_t): ptr UncheckedArray[float32] {.
   cdecl, importc: "pffft_aligned_malloc".}
 
 ## Free aligned memory buffer
-proc pffft_aligned_free*(p: pointer) {.
+proc pffft_aligned_free*(p: ptr UncheckedArray[float]) {.
   cdecl, importc: "pffft_aligned_free".}
 
 ## Returns 4 if SSE/Altivec support is enabled, 1 otherwise
 proc pffft_simd_size*(): cint {.
   cdecl, importc: "pffft_simd_size".}
 
-## High-level Nim convenience procs
-
-## Allocate aligned float array for PFFFT
-proc newAlignedFloatArray*(size: int): ptr UncheckedArray[cfloat] =
-  result = cast[ptr UncheckedArray[cfloat]](pffft_aligned_malloc(csize_t(size * sizeof(cfloat))))
-
-## Free aligned float array
-proc freeAlignedFloatArray*(arr: ptr UncheckedArray[cfloat]) =
-  pffft_aligned_free(cast[pointer](arr))
-
-## Check if size N is valid for PFFFT (returns true if setup creation would succeed)
-proc isValidSize*(N: int): bool =
-  let setup = pffft_new_setup(cint(N), PFFFT_REAL)
-  result = setup != nil
-  if setup != nil:
-    pffft_destroy_setup(setup)
